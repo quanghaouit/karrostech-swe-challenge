@@ -1,14 +1,13 @@
 package com.example.demo.service;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,8 +19,10 @@ import com.example.demo.dao.GPSDao;
 import com.example.demo.entity.GPS;
 import com.example.demo.exception.FileNotFoundException;
 import com.example.demo.exception.FileStorageException;
+import com.example.demo.property.FileStorageProperties;
 
 import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,7 +36,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 
 /**
  * GPS Service Impl Test
@@ -54,8 +54,20 @@ public class GPSServiceImplTest {
     @Autowired
     GPSService gpsService;
 
+    @Autowired
+    FileStorageProperties fileStorateProperties;
+
     @MockBean
     GPSDao gpsDao;
+
+    @AfterAll
+    public void finalize() throws IOException {
+        String test_Folder = fileStorateProperties.getUploadDir() + "/" + USE_NAME;
+        Path source = Paths.get(test_Folder).toAbsolutePath().normalize();
+        if(Files.exists(source)){
+            Files.delete(source);
+        }
+    }
 
     @Test
     public void storeFile_success() throws Exception {
