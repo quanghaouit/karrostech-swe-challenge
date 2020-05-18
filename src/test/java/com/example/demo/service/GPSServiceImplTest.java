@@ -68,6 +68,8 @@ public class GPSServiceImplTest {
                 .path(USE_NAME + "/").path(FILE_NAME).toUriString();
 
         String actualFileDownloadUri = gpsService.storeFile(file, USE_NAME);
+        
+        verify(gpsDao, times(1)).save(any(GPS.class));
         assertEquals(expectFileDownloadUri, actualFileDownloadUri);
     }
 
