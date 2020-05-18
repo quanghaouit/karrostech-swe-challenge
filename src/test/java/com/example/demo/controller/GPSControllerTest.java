@@ -45,6 +45,12 @@ import java.util.List;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+/**
+ * GPS Service Impl Test
+ * 
+ * @author hao.cu
+ * @since 2020/5/17
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @AutoConfigureMockMvc

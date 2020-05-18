@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,15 +18,15 @@ import java.util.Optional;
 
 import com.example.demo.dao.GPSDao;
 import com.example.demo.entity.GPS;
-import com.example.demo.property.FileStorageProperties;
+import com.example.demo.exception.FileNotFoundException;
+import com.example.demo.exception.FileStorageException;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,43 +34,64 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+
+/**
+ * GPS Service Impl Test
+ * 
+ * @author hao.cu
+ * @since 2020/5/18
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 public class GPSServiceImplTest {
+
+    private static final String FILE_NAME = "test.gpx";
+
+    private static final String USE_NAME = "test";
 
     @Autowired
     GPSService gpsService;
 
     @MockBean
-    FileStorageProperties fileStorageProperties;
-        
-    @MockBean
     GPSDao gpsDao;
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
     @Test
-    public void storeFile() throws Exception {
-        String fileName = "sampleTest.gpx";
-        String userTest = "UserTest";
-
-        MockMultipartFile file = new MockMultipartFile("file", fileName, null, "some bytes".getBytes()); 
-        String upload_dir_temp = tempFolder.newFolder().getAbsolutePath();
-        when(fileStorageProperties.getUploadDir()).thenReturn(upload_dir_temp);
+    public void storeFile_success() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", FILE_NAME, null, "some bytes".getBytes());
 
         when(gpsDao.save(any(GPS.class))).thenReturn(new GPS());
+        String expectFileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath().path("/downloadFile/")
+                .path(USE_NAME + "/").path(FILE_NAME).toUriString();
 
-        gpsService.storeFile(file, userTest);
-        Path uploadFilePath = Paths.get(upload_dir_temp + "/" + userTest + "/" + fileName).toAbsolutePath().normalize();
-        // File storeFile = fil
-        assertTrue(Files.exists(uploadFilePath));
-        // verify(gpsDao, times(1)).save(any(GPS.class));
+        String actualFileDownloadUri = gpsService.storeFile(file, USE_NAME);
+        assertEquals(expectFileDownloadUri, actualFileDownloadUri);
+    }
+
+    @Test(expected = FileStorageException.class)
+    public void storeFile_error() throws Exception {
+        String fileName = "test..gpx";
+        String username = "test";
+
+        MockMultipartFile file = new MockMultipartFile("file", fileName, null, "some bytes".getBytes());
+        gpsService.storeFile(file, username);
     }
 
     @Test
-    public void getGPSById(){
+    public void loadFileAsResource_success() throws Exception {
+        Resource resource = gpsService.loadFileAsResource(USE_NAME, FILE_NAME);
+        assertEquals(FILE_NAME, resource.getFilename());
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void loadFileAsResource_error() throws Exception {
+        String fileNameNotExist = "test1.gpx";
+        gpsService.loadFileAsResource(USE_NAME, fileNameNotExist);
+    }
+
+    @Test
+    public void getGPSById() {
         Optional<GPS> option = Optional.of(new GPS());
         when(gpsDao.findById(1)).thenReturn(option);
         gpsService.getGPSById(1);
@@ -78,13 +101,13 @@ public class GPSServiceImplTest {
     }
 
     @Test
-    public void getGpsPage(){
+    public void getGpsPage() {
         Pageable sortedByUploadDateTimeDesc = PageRequest.of(0, 3, Sort.by("uploadDateTime").descending());
         List<GPS> content = new ArrayList<>();
         Page<GPS> pageReturn = new PageImpl<>(content);
         when(gpsDao.findAll(sortedByUploadDateTimeDesc)).thenReturn(pageReturn);
         gpsService.getGpsPage(sortedByUploadDateTimeDesc);
-    
+
         verify(gpsDao, times(1)).findAll(sortedByUploadDateTimeDesc);
         verifyNoMoreInteractions(gpsDao);
     }

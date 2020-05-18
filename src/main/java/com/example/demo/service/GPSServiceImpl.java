@@ -33,7 +33,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
  * @since 2020/5/16
  */
 @Service
-public class GPSServiceImp implements GPSService {
+public class GPSServiceImpl implements GPSService {
 
     /**
      * File storage location
@@ -46,7 +46,7 @@ public class GPSServiceImp implements GPSService {
      * @param fileStorateProperties file storate properties
      */
     @Autowired
-    public GPSServiceImp( FileStorageProperties fileStorateProperties) {
+    public GPSServiceImpl( FileStorageProperties fileStorateProperties) {
         this.fileStorageLocation = Paths.get(fileStorateProperties.getUploadDir()).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
