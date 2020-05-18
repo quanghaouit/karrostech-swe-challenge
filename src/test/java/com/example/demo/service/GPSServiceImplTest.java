@@ -21,6 +21,8 @@ import com.example.demo.exception.FileNotFoundException;
 import com.example.demo.exception.FileStorageException;
 import com.example.demo.property.FileStorageProperties;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.runner.RunWith;
@@ -60,15 +62,6 @@ public class GPSServiceImplTest {
     @MockBean
     GPSDao gpsDao;
 
-    @AfterAll
-    public void finalize() throws IOException {
-        String test_Folder = fileStorateProperties.getUploadDir() + "/" + USE_NAME;
-        Path source = Paths.get(test_Folder).toAbsolutePath().normalize();
-        if(Files.exists(source)){
-            Files.delete(source);
-        }
-    }
-
     @Test
     public void storeFile_success() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", FILE_NAME, null, "some bytes".getBytes());
@@ -94,12 +87,13 @@ public class GPSServiceImplTest {
     public void loadFileAsResource_success() throws Exception {
         Resource resource = gpsService.loadFileAsResource(USE_NAME, FILE_NAME);
         assertEquals(FILE_NAME, resource.getFilename());
+
     }
 
     @Test(expected = FileNotFoundException.class)
     public void loadFileAsResource_error() throws Exception {
-        String fileNameNotExist = "test1.gpx";
-        gpsService.loadFileAsResource(USE_NAME, fileNameNotExist);
+        cleanUp();
+        gpsService.loadFileAsResource(USE_NAME, FILE_NAME);
     }
 
     @Test
@@ -122,5 +116,18 @@ public class GPSServiceImplTest {
 
         verify(gpsDao, times(1)).findAll(sortedByUploadDateTimeDesc);
         verifyNoMoreInteractions(gpsDao);
+    }
+
+    private void cleanUp() throws IOException {
+        String test_Folder = fileStorateProperties.getUploadDir() + "/" + USE_NAME;
+        String test_File = fileStorateProperties.getUploadDir() + "/" + USE_NAME +"/"+ FILE_NAME;
+        Path sourceFolder = Paths.get(test_Folder).toAbsolutePath().normalize();
+        Path sourceFile = Paths.get(test_File).toAbsolutePath().normalize();
+        if(Files.exists(sourceFile)){
+            Files.delete(sourceFile);
+        }
+        if(Files.exists(sourceFolder)){
+            Files.delete(sourceFolder);
+        }
     }
 }
